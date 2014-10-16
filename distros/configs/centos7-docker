@@ -1,0 +1,84 @@
+install
+text
+lang en_US.UTF-8
+keyboard us
+network --device eth0 --bootproto=dhcp
+firewall --enabled --port=22:tcp
+authconfig --enableshadow --enablemd5
+selinux --enforcing
+timezone --utc America/Los_Angeles
+bootloader --location=mbr --driveorder=xvda --append="console=hvc0" --timeout=5
+rootpw --plaintext password
+poweroff
+repo --name=extras --baseurl=http://mirrors.kernel.org/centos/7/extras/x86_64
+
+zerombr
+clearpart --all --initlabel --drives=xvda
+part / --size=1 --grow --asprimary --fstype=ext3 --label=PRGMRDISK1 --fsoptions="defaults,barrier=0,errors=remount-ro"
+
+%packages
+@core
+-autofs
+-bluez-libs
+-avahi
+-pcsc-lite
+-wireless-tools
+-rhpl
+-bluez-utils
+-cups
+-system-config-network-tui
+-firstboot-tui
+-ccid
+-ifd-egate
+-coolkey
+-linux-firmware
+-kernel-firmware
+NetworkManager
+net-tools
+chrony
+openssh-server
+man
+nano
+docker
+%end
+
+%post --nochroot
+cp -p /*ks /mnt/sysimage/usr/local/sbin/
+%end
+
+%post
+echo localhost > /etc/hostname
+echo 'nameserver 71.19.155.120
+nameserver 71.19.145.215
+#nameserver 8.8.8.8' > /etc/resolv.conf
+sed -i 's/HOSTNAME=.\+//' /etc/sysconfig/network
+echo 'DEVICE="eth0"
+BOOTPROTO="dhcp"
+NM_CONTROLLED="no"
+ONBOOT="yes"
+IPV6_AUTOCONF="no"
+IPV6INIT="no"' > /etc/sysconfig/network-scripts/ifcfg-eth0
+echo "net.ipv6.conf.eth0.autoconf = 0
+net.ipv6.conf.eth0.accept_ra = 0" >> /etc/sysctl.conf
+chkconfig network on
+
+dd if=/dev/zero of=/var/swap bs=1M count=512
+mkswap /var/swap
+echo "/var/swap      none     swap    sw	0	0" >> /etc/fstab
+
+passwd -d root
+
+sed -i	-e 's/#PermitRootLogin yes/PermitRootLogin without-password/g' \
+	  		-e 's/^PasswordAuthentication yes/PasswordAuthentication no/g' \
+	 /etc/ssh/sshd_config
+
+sed -i 's/UUID=[^ ]\+/LABEL=PRGMRDISK1/' /etc/fstab
+
+rename ".ks" "" /usr/local/sbin/*
+sed -i 's/GRUB_CMDLINE_LINUX=.\+/GRUB_CMDLINE_LINUX="console=hvc0 rootflags=barrier=0"/' /etc/default/grub
+echo 'GRUB_DISABLE_LINUX_UUID="true"' >> /etc/default/grub
+/usr/local/sbin/grub2-mkconfig -o /boot/grub2/grub.cfg
+ln -s /boot/grub/menu.lst /etc/grub.conf
+touch /.autorelabel
+chkconfig docker on
+%end

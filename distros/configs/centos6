@@ -1,0 +1,76 @@
+install
+text
+lang en_US.UTF-8
+keyboard us
+network --device eth0 --bootproto=dhcp
+firewall --enabled --port=22:tcp
+authconfig --enableshadow --enablemd5
+selinux --enforcing
+timezone --utc America/Los_Angeles
+bootloader --location=mbr --driveorder=xvda --append="console=hvc0" --timeout=5
+rootpw --plaintext password
+poweroff
+
+zerombr
+clearpart --all --initlabel --drives=xvda
+part / --size=1 --grow --asprimary --fstype=ext3 --label=PRGMRDISK1 --fsoptions="defaults,barrier=0,errors=remount-ro"
+
+%packages
+@base
+-autofs
+-bluez-libs
+-avahi
+-pcsc-lite
+-wireless-tools
+-rhpl
+redhat-lsb
+-bluez-utils
+-cups
+-system-config-network-tui
+-firstboot-tui
+-ccid
+-ifd-egate
+-coolkey
+-kernel-firmware
+NetworkManager
+net-tools
+openssh-server
+screen
+man
+nano
+%end
+
+%post
+echo localhost > /etc/hostname
+echo 'nameserver 71.19.155.120
+nameserver 71.19.145.215
+#nameserver 8.8.8.8' > /etc/resolv.conf
+sed -i 's/HOSTNAME=.\+//' /etc/sysconfig/network
+echo 'DEVICE="eth0"
+BOOTPROTO="dhcp"
+NM_CONTROLLED="no"
+ONBOOT="yes"
+IPV6_AUTOCONF="no"
+IPV6INIT="no"' > /etc/sysconfig/network-scripts/ifcfg-eth0
+echo "net.ipv6.conf.eth0.autoconf = 0
+net.ipv6.conf.eth0.accept_ra = 0" >> /etc/sysctl.conf
+chkconfig network on
+
+echo hvc0 >> /etc/securetty
+
+dd if=/dev/zero of=/var/swap bs=1M count=512
+mkswap /var/swap
+echo "/var/swap      none     swap    sw	0	0" >> /etc/fstab
+
+passwd -d root
+
+sed -i	-e 's/#PermitRootLogin yes/PermitRootLogin without-password/g' \
+	  		-e 's/^PasswordAuthentication yes/PasswordAuthentication no/g' \
+	 /etc/ssh/sshd_config
+
+sed -i 's/UUID=[^ ]\+/LABEL=PRGMRDISK1/' /etc/fstab
+
+sed -i 's/root=UUID=.\+/root=LABEL=PRGMRDISK1 console=hvc0 rootflags=barrier=0/' /boot/grub/menu.lst
+
+touch /.autorelabel
+%end
