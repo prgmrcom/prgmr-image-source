@@ -16,14 +16,14 @@ clearpart --all --initlabel --drives=xvda
 part / --size=1 --grow --asprimary --fstype=ext3 --label=PRGMRDISK1 --fsoptions="defaults,barrier=0,errors=remount-ro"
 
 %packages
-@base
+@core
 -autofs
 -bluez-libs
 -avahi
 -pcsc-lite
 -wireless-tools
 -rhpl
-redhat-lsb
+-NetworkManager
 -bluez-utils
 -cups
 -system-config-network-tui
@@ -31,13 +31,40 @@ redhat-lsb
 -ccid
 -ifd-egate
 -coolkey
--kernel-firmware
-NetworkManager
-net-tools
-openssh-server
-screen
+-fprintd-pam
+-fprintd
+-hal
+-hal-info
+-libfprint
+-pm-utils
+-polkit
+-abrt-cli
+-abrt-libs
+-abrt
+-abrt-addon-python
+-abrt-addon-ccpp
+-abrt-tui
+-abrt-addon-kerneloops
+at
+bc
+bind-utils
+logrotate
+lsof
 man
 nano
+net-tools
+ntp
+openssh-server
+perl
+python
+rsync
+screen
+traceroute
+unzip
+xz
+yum-plugin-security
+yum-utils
+zip
 %end
 
 %post
@@ -70,7 +97,8 @@ sed -i	-e 's/#PermitRootLogin yes/PermitRootLogin without-password/g' \
 
 sed -i 's/UUID=[^ ]\+/LABEL=PRGMRDISK1/' /etc/fstab
 
-sed -i 's/root=UUID=.\+/root=LABEL=PRGMRDISK1 console=hvc0 rootflags=barrier=0/' /boot/grub/menu.lst
-
+sed -i 's/root=UUID=.\+/root=LABEL=PRGMRDISK1 console=hvc0 rootflags=barrier=0/' /boot/grub/grub.conf
+rpm -qa | sort > /var/log/install-list
 touch /.autorelabel
+chkconfig ntpd on
 %end

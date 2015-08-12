@@ -4,7 +4,6 @@ lang en_US.UTF-8
 keyboard us
 network --device eth0 --bootproto=dhcp
 firewall --enabled --port=22:tcp
-authconfig --enableshadow --enablemd5
 selinux --enforcing
 timezone --utc America/Los_Angeles
 bootloader --location=mbr --driveorder=xvda --append="console=hvc0" --timeout=5
@@ -32,12 +31,22 @@ part / --size=1 --grow --asprimary --fstype=ext3 --label=PRGMRDISK1 --fsoptions=
 -coolkey
 -linux-firmware
 -kernel-firmware
-NetworkManager
+-NetworkManager
+-NetworkManager-libnm
+-NetworkManager-team
+-NetworkManager-tui
+-polkit
+-polkit-pkla-compat
+-tuned
 net-tools
 chrony
 openssh-server
 man
 nano
+perl
+python
+logrotate
+screen
 %end
 
 %post --nochroot
@@ -73,9 +82,11 @@ sed -i	-e 's/#PermitRootLogin yes/PermitRootLogin without-password/g' \
 sed -i 's/UUID=[^ ]\+/LABEL=PRGMRDISK1/' /etc/fstab
 
 rename ".ks" "" /usr/local/sbin/*
+chmod +x /usr/local/sbin/*
 sed -i 's/GRUB_CMDLINE_LINUX=.\+/GRUB_CMDLINE_LINUX="console=hvc0 rootflags=barrier=0"/' /etc/default/grub
 echo 'GRUB_DISABLE_LINUX_UUID="true"' >> /etc/default/grub
 /usr/local/sbin/grub2-mkconfig -o /boot/grub2/grub.cfg
 ln -s /boot/grub/menu.lst /etc/grub.conf
+rpm -qa | sort > /var/log/install-list
 touch /.autorelabel
 %end

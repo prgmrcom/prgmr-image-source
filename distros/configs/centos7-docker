@@ -4,13 +4,11 @@ lang en_US.UTF-8
 keyboard us
 network --device eth0 --bootproto=dhcp
 firewall --enabled --port=22:tcp
-authconfig --enableshadow --enablemd5
 selinux --enforcing
 timezone --utc America/Los_Angeles
 bootloader --location=mbr --driveorder=xvda --append="console=hvc0" --timeout=5
 rootpw --plaintext password
 poweroff
-repo --name=extras --baseurl=http://mirrors.kernel.org/centos/7/extras/x86_64
 
 zerombr
 clearpart --all --initlabel --drives=xvda
@@ -33,13 +31,22 @@ part / --size=1 --grow --asprimary --fstype=ext3 --label=PRGMRDISK1 --fsoptions=
 -coolkey
 -linux-firmware
 -kernel-firmware
-NetworkManager
+-NetworkManager
+-NetworkManager-libnm
+-NetworkManager-team
+-NetworkManager-tui
+-polkit
+-polkit-pkla-compat
+-tuned
 net-tools
 chrony
 openssh-server
 man
 nano
-docker
+perl
+python
+logrotate
+screen
 %end
 
 %post --nochroot
@@ -47,6 +54,7 @@ cp -p /*ks /mnt/sysimage/usr/local/sbin/
 %end
 
 %post
+yum install -y docker
 echo localhost > /etc/hostname
 echo 'nameserver 71.19.155.120
 nameserver 71.19.145.215
@@ -75,10 +83,25 @@ sed -i	-e 's/#PermitRootLogin yes/PermitRootLogin without-password/g' \
 sed -i 's/UUID=[^ ]\+/LABEL=PRGMRDISK1/' /etc/fstab
 
 rename ".ks" "" /usr/local/sbin/*
+chmod +x /usr/local/sbin/*
 sed -i 's/GRUB_CMDLINE_LINUX=.\+/GRUB_CMDLINE_LINUX="console=hvc0 rootflags=barrier=0"/' /etc/default/grub
 echo 'GRUB_DISABLE_LINUX_UUID="true"' >> /etc/default/grub
 /usr/local/sbin/grub2-mkconfig -o /boot/grub2/grub.cfg
 ln -s /boot/grub/menu.lst /etc/grub.conf
 touch /.autorelabel
+echo "[ -e /etc/rc.d/firstboot ] && /etc/rc.d/firstboot" >> /etc/rc.d/rc.local
+chmod +x /etc/rc.d/rc.local
+cat <<EOF >  /etc/rc.d/firstboot
+#!/bin/bash
+vgcreate docker-vg /dev/xvda2
+docker-storage-setup
+sed 's/xfs/ext4/g' -i /etc/sysconfig/docker-storage
 chkconfig docker on
+service docker start
+mv /etc/rc.d/firstboot /etc/rc.d/firstboot.ran
+EOF
+chmod +x /etc/rc.d/firstboot
+echo 'VG=docker-vg
+SETUP_LVM_THIN_POOL=yes' > /etc/sysconfig/docker-storage-setup
+rpm -qa | sort > /var/log/install-list
 %end

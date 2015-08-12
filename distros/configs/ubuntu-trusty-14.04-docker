@@ -273,7 +273,7 @@ d-i partman/mount_style select label
 # Configure APT to not install recommended packages by default. Use of this
 # option can result in an incomplete system and should only be used by very
 # experienced users.
-#d-i base-installer/install-recommends boolean false
+d-i base-installer/install-recommends boolean false
 
 # The kernel image (meta) package to be installed; "none" can be used if no
 # kernel is to be installed.
@@ -327,6 +327,7 @@ d-i passwd/root-password-again password password
 #d-i apt-setup/services-select multiselect security
 #d-i apt-setup/security_host string security.ubuntu.com
 #d-i apt-setup/security_path string /ubuntu
+d-i apt-setup/mirror/error	select	Retry
 
 # Additional repositories, local[0-9] available
 #d-i apt-setup/local0/repository string \
@@ -377,9 +378,13 @@ d-i pkgsel/include string \
         nano \
         ncurses-base \
         ncurses-term \
+        ntp \
         patch \
+        perl \
         psmisc \
         pv-grub-menu \
+        python \
+        python3 \
         rsync \
         screen \
         ssh \
@@ -394,6 +399,7 @@ d-i pkgsel/include string \
         wget \
         whois \
         debconf-utils \
+        lvm2 \
         docker.io
 
 # Whether to upgrade packages after debootstrap.
@@ -539,6 +545,8 @@ d-i partman/early_command \
 #d-i preseed/late_command string apt-install zsh; in-target chsh -s /bin/zsh
 
 d-i preseed/late_command string \
+	in-target apt-get remove -y --purge libx11-data language-pack-gnome-en; \
+	in-target apt-get autoremove -y; \
 	dd if=/dev/zero of=/target/var/swap bs=1M count=512; \
 	in-target mkswap /var/swap; \
 	in-target bash -c 'echo "/var/swap      none     swap    sw	0	0" >> /etc/fstab'; \
@@ -549,4 +557,6 @@ d-i preseed/late_command string \
 	in-target passwd -d root; \
 	in-target bash -c "ln -sf /usr/bin/docker.io /usr/local/bin/docker"; \
 	in-target bash -c "sed -i '$acomplete -F _docker docker' /etc/bash_completion.d/docker.io"; \
+	in-target bash -c 'grep -E "^deb(-src)? http://mirrors.kernel.org" /etc/apt/sources.list | sed "s#mirrors.kernel.org#us.archive.ubuntu.com#g" >> /etc/apt/sources.list'; \
+	in-target bash -c 'dpkg -l | grep -E '^ii' > /var/log/install-list'; \
 	in-target bash -c "rm /etc/ssh/ssh_host_*_key*"

@@ -1,6 +1,8 @@
 #!/bin/sh
 set -e
 
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+
 argument () {
   opt=$1
   shift
@@ -12,7 +14,7 @@ argument () {
   echo $1
 }
 
-output=$(/usr/sbin/$(basename $0) "$@")
+output=$($(basename $0) "$@")
 
 # Check the arguments.
 while test $# -gt 0

@@ -73,10 +73,19 @@ d-i netcfg/get_domain string unassigned-domain
 #d-i mirror/protocol string ftp
 d-i mirror/protocol string http
 d-i mirror/country string manual
+
 #d-i mirror/country string US
 #d-i mirror/http/hostname string 192.168.100.254:8000
-d-i mirror/http/hostname string mirrors.kernel.org
-d-i mirror/http/directory string /debian
+
+d-i mirror/http/hostname string mirror.prgmr.com
+d-i mirror/http/directory string /pub/debian
+
+#d-i mirror/http/hostname string mirrors.kernel.org
+#d-i mirror/http/directory string /debian
+
+#d-i mirror/http/hostname string http.us.debian.org
+#d-i mirror/http/directory string /debian
+
 d-i mirror/http/proxy string
 
 # Alternatively: by default, the installer uses CC.archive.ubuntu.com where
@@ -214,7 +223,7 @@ d-i partman-auto/expert_recipe string root ::                 \
                       $primary{ } $bootable{ }                \
                       method{ format } format{ }              \
                       use_filesystem{ } filesystem{ ext3 }    \
-                      label{ RESCUE }                     \
+                      label{ PRGMRDISK1 }                     \
                       mountpoint{ / } .                       \
 
 d-i partman-auto/choose_recipe select root
@@ -297,12 +306,11 @@ d-i partman/mount_style select label
 # Configure APT to not install recommended packages by default. Use of this
 # option can result in an incomplete system and should only be used by very
 # experienced users.
-#d-i base-installer/install-recommends boolean false
+d-i base-installer/install-recommends boolean false
 
 # The kernel image (meta) package to be installed; "none" can be used if no
 # kernel is to be installed.
 d-i base-installer/kernel/image string linux-image
-
 
 ### Apt setup
 # You can choose to install non-free and contrib software.
@@ -316,9 +324,9 @@ d-i base-installer/kernel/image string linux-image
 #d-i apt-setup/security_host string security.debian.org
 d-i apt-setup/mirror/error	select	Retry
 
+d-i apt-setup/source boolean false
+
 # Additional repositories, local[0-9] available
-d-i apt-setup/local0/repository string \
-       http://mirrors.kernel.org/debian wheezy-backports main
 #d-i apt-setup/local0/comment string local server
 # Enable deb-src lines
 #d-i apt-setup/local0/source boolean true
@@ -350,7 +358,7 @@ d-i apt-setup/local0/repository string \
 #d-i debian-installer/allow_unauthenticated boolean true
 
 ### Package selection
-tasksel tasksel/first multiselect standard
+tasksel tasksel/first multiselect ssh-server
 #tasksel tasksel/first multiselect lamp-server, print-server
 #tasksel tasksel/first multiselect kubuntu-desktop
 
@@ -358,35 +366,56 @@ tasksel tasksel/first multiselect standard
 #d-i pkgsel/include string openssh-server build-essential
 
 d-i pkgsel/include string \
+        anacron \
+        aptitude \
+        at \
         bash-completion \
         bc \
+        bsd-mailx \
         bsdutils \
+        bzip2 \
+        ca-certificates \
+        dbus \
+        dc \
+        debconf-utils \
         diffutils \
         dnsutils \
+        file \
         ftp \
         gawk \
         hostname \
-        info \
         ifupdown \
+        info \
+        installation-report \
+        iproute2 \
         iptables \
         ipv6calc \
         isc-dhcp-client \
         less \
         locales \
+        lsb-release \
         lsof \
+        m4 \
         man \
         manpages \
         mktemp \
         nano \
         ncurses-base \
         ncurses-term \
+        ntp \
         patch \
+        perl \
         psmisc \
         pv-grub-menu \
+        python \
+        python3 \
         rsync \
         screen \
         ssh \
         ssl-cert \
+        sudo \
+        tasksel \
+        telnet \
         time \
         traceroute \
         unzip \
@@ -394,18 +423,7 @@ d-i pkgsel/include string \
         w3m \
         wget \
         whois \
-        aufs-tools \
-        resolvconf \
-        rpm \
-        parted \
-        ufsutils \
-        ecryptfs-utils \
-        gfs2-utils \
-        jfsutils \
-        cryptsetup-bin \
-        rng-tools \
-        busybox-static \
-        dosfstools
+        xz-utils
 
 # Whether to upgrade packages after debootstrap.
 # Allowed values: none, safe-upgrade, full-upgrade
@@ -464,7 +482,7 @@ d-i nobootloader/confirmation_common note
 # Use the following option to add additional boot parameters for the
 # installed system (if supported by the bootloader installer).
 # Note: options passed to the installer will be added automatically.
-d-i debian-installer/add-kernel-opts string console=hvc0 ro rootflags=barrier=0 fastboot
+d-i debian-installer/add-kernel-opts string console=hvc0 ro rootflags=barrier=0
 
 ### Finishing up the installation
 # During installations from serial console, the regular virtual consoles
@@ -545,11 +563,17 @@ d-i partman/early_command \
 #d-i preseed/late_command string apt-install zsh; in-target chsh -s /bin/zsh
 
 d-i preseed/late_command string \
+	in-target apt-get remove -y --purge libx11-data xkb-data; \
+	in-target apt-get remove -y --purge libx11-data; \
+	in-target apt-get autoremove -y; \
+	dd if=/dev/zero of=/target/var/swap bs=1M count=512; \
+	in-target mkswap /var/swap; \
+	in-target bash -c 'echo "/var/swap      none     swap    sw	0	0" >> /etc/fstab'; \
 	cp /prgmr-pv-domu* /target; \
 	in-target dpkg -i --force-confnew /prgmr-*; \
 	in-target rm /prgmr*; \
 	cp /target/etc/network/interfaces /etc/network/interfaces; \
 	in-target passwd -d root; \
-	in-target apt-get remove -y cron anacron rpcbind; \
-	in-target apt-get clean; \
+	in-target bash -c 'grep -E "^deb(-src)? http://mirror.prgmr.com" /etc/apt/sources.list | sed "s#mirror.prgmr.com/pub#ftp.us.debian.org#g" >> /etc/apt/sources.list'; \
+	in-target bash -c 'dpkg -l | grep -E '^ii' > /var/log/install-list'; \
 	in-target bash -c "rm /etc/ssh/ssh_host_*_key*"
