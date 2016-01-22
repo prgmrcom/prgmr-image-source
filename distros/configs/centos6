@@ -4,7 +4,7 @@ lang en_US.UTF-8
 keyboard us
 network --device eth0 --bootproto=dhcp
 firewall --enabled --port=22:tcp
-authconfig --enableshadow --enablemd5
+authconfig --enableshadow --passalgo=sha512
 selinux --enforcing
 timezone --utc America/Los_Angeles
 bootloader --location=mbr --driveorder=xvda --append="console=hvc0" --timeout=5
@@ -85,15 +85,17 @@ chkconfig network on
 
 echo hvc0 >> /etc/securetty
 
-dd if=/dev/zero of=/var/swap bs=1M count=512
-mkswap /var/swap
-echo "/var/swap      none     swap    sw	0	0" >> /etc/fstab
-
 passwd -d root
 
 sed -i	-e 's/#PermitRootLogin yes/PermitRootLogin without-password/g' \
 	  		-e 's/^PasswordAuthentication yes/PasswordAuthentication no/g' \
 	 /etc/ssh/sshd_config
+
+echo '
+HostKey /etc/ssh/ssh_host_rsa_key
+MACs hmac-sha2-512,hmac-sha2-256,hmac-ripemd160
+Ciphers aes256-ctr,aes192-ctr,aes128-ctr
+KexAlgorithms diffie-hellman-group-exchange-sha256,diffie-hellman-group-exchange-sha1' >> /etc/ssh/sshd_config
 
 sed -i 's/UUID=[^ ]\+/LABEL=PRGMRDISK1/' /etc/fstab
 

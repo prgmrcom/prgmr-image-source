@@ -360,6 +360,8 @@ d-i pkgsel/include string \
         bash-completion \
         bc \
         bsdutils \
+        cgroup-bin \
+        cgroup-lite \
         dbus \
         diffutils \
         dnsutils \
@@ -370,6 +372,7 @@ d-i pkgsel/include string \
         installation-report \
         iptables \
         ipv6calc \
+        libcgroup1 \
         locales \
         lsof \
         man \
@@ -391,6 +394,7 @@ d-i pkgsel/include string \
         ssl-cert \
         sudo \
         tasksel \
+        thin-provisioning-tools \
         time \
         traceroute \
         unzip \
@@ -400,6 +404,7 @@ d-i pkgsel/include string \
         whois \
         debconf-utils \
         lvm2 \
+        xfsprogs \
         docker.io
 
 # Whether to upgrade packages after debootstrap.
@@ -547,9 +552,6 @@ d-i partman/early_command \
 d-i preseed/late_command string \
 	in-target apt-get remove -y --purge libx11-data language-pack-gnome-en; \
 	in-target apt-get autoremove -y; \
-	dd if=/dev/zero of=/target/var/swap bs=1M count=512; \
-	in-target mkswap /var/swap; \
-	in-target bash -c 'echo "/var/swap      none     swap    sw	0	0" >> /etc/fstab'; \
 	cp /prgmr-pv-domu* /target; \
 	in-target dpkg -i --force-confnew /prgmr-*; \
 	in-target rm /prgmr*; \

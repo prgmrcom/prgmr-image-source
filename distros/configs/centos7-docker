@@ -70,20 +70,23 @@ echo "net.ipv6.conf.eth0.autoconf = 0
 net.ipv6.conf.eth0.accept_ra = 0" >> /etc/sysctl.conf
 chkconfig network on
 
-dd if=/dev/zero of=/var/swap bs=1M count=512
-mkswap /var/swap
-echo "/var/swap      none     swap    sw	0	0" >> /etc/fstab
-
 passwd -d root
 
 sed -i	-e 's/#PermitRootLogin yes/PermitRootLogin without-password/g' \
 	  		-e 's/^PasswordAuthentication yes/PasswordAuthentication no/g' \
 	 /etc/ssh/sshd_config
 
+echo '
+HostKey /etc/ssh/ssh_host_rsa_key
+MACs hmac-sha2-512,hmac-sha2-256,hmac-ripemd160
+Ciphers aes256-ctr,aes192-ctr,aes128-ctr
+KexAlgorithms diffie-hellman-group-exchange-sha256,diffie-hellman-group-exchange-sha1' >> /etc/ssh/sshd_config
+
 sed -i 's/UUID=[^ ]\+/LABEL=PRGMRDISK1/' /etc/fstab
 
 rename ".ks" "" /usr/local/sbin/*
 chmod +x /usr/local/sbin/*
+mv /usr/local/sbin/52-redo-menu-lst.sh /etc/kernel/postinst.d/52-redo-menu-lst.sh
 sed -i 's/GRUB_CMDLINE_LINUX=.\+/GRUB_CMDLINE_LINUX="console=hvc0 rootflags=barrier=0"/' /etc/default/grub
 echo 'GRUB_DISABLE_LINUX_UUID="true"' >> /etc/default/grub
 /usr/local/sbin/grub2-mkconfig -o /boot/grub2/grub.cfg

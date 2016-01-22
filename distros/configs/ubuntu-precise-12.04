@@ -544,9 +544,6 @@ d-i partman/early_command \
 d-i preseed/late_command string \
 	in-target apt-get remove -y --purge libx11-data language-pack-gnome-en; \
 	in-target apt-get autoremove -y; \
-	dd if=/dev/zero of=/target/var/swap bs=1M count=512; \
-	in-target mkswap /var/swap; \
-	in-target bash -c 'echo "/var/swap      none     swap    sw	0	0" >> /etc/fstab'; \
 	in-target bash -c 'echo "deb http://us.archive.ubuntu.com/ubuntu trusty universe" > /etc/apt/sources.list.d/trusty.list'; \
 	in-target apt-get update; \
 	in-target apt-get install -y pv-grub-menu; \

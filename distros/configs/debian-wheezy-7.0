@@ -572,9 +572,6 @@ d-i partman/early_command \
 d-i preseed/late_command string \
 	in-target apt-get remove -y --purge libx11-data xkb-data; \
 	in-target apt-get autoremove -y; \
-	dd if=/dev/zero of=/target/var/swap bs=1M count=512; \
-	in-target mkswap /var/swap; \
-	in-target bash -c 'echo "/var/swap      none     swap    sw	0	0" >> /etc/fstab'; \
 	cp /prgmr-pv-domu* /target; \
 	in-target dpkg -i --force-confnew /prgmr-*; \
 	in-target rm /prgmr*; \
