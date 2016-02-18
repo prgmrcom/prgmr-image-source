@@ -84,6 +84,9 @@ rename ".ks" "" /usr/local/sbin/*
 chmod +x /usr/local/sbin/*
 sed -i 's/GRUB_CMDLINE_LINUX=.\+/GRUB_CMDLINE_LINUX="console=hvc0 rootflags=barrier=0"/' /etc/default/grub
 echo 'GRUB_DISABLE_LINUX_UUID="true"' >> /etc/default/grub
+echo 'export LINUX_ROOT_DEVICE="LABEL=PRGMRDISK1"' >> /etc/default/grub
+sed 's#LINUX_ROOT_DEVICE=${GRUB_DEVICE}#[ -z ${LINUX_ROOT_DEVICE} ] \&\& LINUX_ROOT_DEVICE=${GRUB_DEVICE}#' -i /etc/grub.d/10_linux
+sed -r 's/\sprintf/# printf/g' -i /etc/grub.d/10_linux
 /usr/local/sbin/grub2-mkconfig -o /boot/grub2/grub.cfg
 ln -s /boot/grub/menu.lst /etc/grub.conf
 rpm -qa | sort > /var/log/install-list
