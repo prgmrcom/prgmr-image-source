@@ -13,7 +13,7 @@ poweroff
 
 zerombr
 clearpart --all --initlabel --drives=xvda
-part / --size=1 --grow --asprimary --fstype=ext3 --label=PRGMRDISK1 --fsoptions="defaults,barrier=0,errors=remount-ro"
+part / --size=1 --grow --asprimary --fstype=ext4 --label=PRGMRDISK1 --fsoptions="defaults,barrier=0,errors=remount-ro"
 
 %packages
 @core

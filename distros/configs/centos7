@@ -12,7 +12,7 @@ poweroff
 
 zerombr
 clearpart --all --initlabel --drives=xvda
-part / --size=1 --grow --asprimary --fstype=ext3 --label=PRGMRDISK1 --fsoptions="defaults,barrier=0,errors=remount-ro"
+part / --size=1 --grow --asprimary --fstype=ext4 --label=PRGMRDISK1 --fsoptions="defaults,barrier=0,errors=remount-ro"
 
 %packages
 @core
@@ -38,6 +38,8 @@ part / --size=1 --grow --asprimary --fstype=ext3 --label=PRGMRDISK1 --fsoptions=
 -polkit
 -polkit-pkla-compat
 -tuned
+bind-utils
+iputils
 net-tools
 chrony
 openssh-server
@@ -89,8 +91,10 @@ mv /usr/local/sbin/52-redo-menu-lst.sh /etc/kernel/postinst.d/52-redo-menu-lst.s
 sed -i 's/GRUB_CMDLINE_LINUX=.\+/GRUB_CMDLINE_LINUX="console=hvc0 rootflags=barrier=0"/' /etc/default/grub
 echo 'GRUB_DISABLE_LINUX_UUID="true"' >> /etc/default/grub
 echo 'export LINUX_ROOT_DEVICE="LABEL=PRGMRDISK1"' >> /etc/default/grub
+sed -i 's/GRUB_TERMINAL_OUTPUT=.\+/GRUB_TERMINAL_OUTPUT="serial console"/' /etc/default/grub
+echo 'GRUB_SERIAL_COMMAND="serial --unit=0 --speed=115200"' >> /etc/default/grub
 sed 's#LINUX_ROOT_DEVICE=${GRUB_DEVICE}#[ -z ${LINUX_ROOT_DEVICE} ] \&\& LINUX_ROOT_DEVICE=${GRUB_DEVICE}#' -i /etc/grub.d/10_linux
-sed -r 's/\sprintf/# printf/g' -i /etc/grub.d/10_linux
+sed 's/printf '\''%s\\n'\''/#printf '\''%s\\n'\''/g' -i /etc/grub.d/10_linux
 /usr/local/sbin/grub2-mkconfig -o /boot/grub2/grub.cfg
 ln -s /boot/grub/menu.lst /etc/grub.conf
 rpm -qa | sort > /var/log/install-list
