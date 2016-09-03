@@ -87,7 +87,8 @@ echo hvc0 >> /etc/securetty
 
 passwd -d root
 
-sed -i	-e 's/#PermitRootLogin yes/PermitRootLogin without-password/g' \
+sed -i	-e 's/^PermitRootLogin yes/PermitRootLogin without-password/g' \
+        -e 's/#PermitRootLogin yes/PermitRootLogin without-password/g' \
 	  		-e 's/^PasswordAuthentication yes/PasswordAuthentication no/g' \
 	 /etc/ssh/sshd_config
 
