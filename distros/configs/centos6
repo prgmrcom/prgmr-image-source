@@ -93,6 +93,7 @@ sed -i	-e 's/^PermitRootLogin yes/PermitRootLogin without-password/g' \
 	 /etc/ssh/sshd_config
 
 echo '
+UseDNS no
 HostKey /etc/ssh/ssh_host_rsa_key
 MACs hmac-sha2-512,hmac-sha2-256,hmac-ripemd160
 Ciphers aes256-ctr,aes192-ctr,aes128-ctr
