@@ -35,8 +35,8 @@ part / --size=1 --grow --asprimary --fstype=ext4 --label=PRGMRDISK1 --fsoptions=
 -NetworkManager-libnm
 -NetworkManager-team
 -NetworkManager-tui
--polkit
--polkit-pkla-compat
+polkit
+polkit-pkla-compat
 -tuned
 bind-utils
 iputils

@@ -52,6 +52,10 @@ cp -p /*ks /mnt/sysimage/usr/local/sbin/
 %end
 
 %post
+[ -e /lib/systemd/system/basic.target.wants/fedora-autorelabel-mark.service ] && \
+	mv /lib/systemd/system/basic.target.wants/fedora-autorelabel-mark.service /lib/systemd/system/sysinit.target.wants/
+[ -e /lib/systemd/system/basic.target.wants/fedora-autorelabel.service ] && \
+	mv /lib/systemd/system/basic.target.wants/fedora-autorelabel.service /lib/systemd/system/sysinit.target.wants/
 echo localhost > /etc/hostname
 echo 'nameserver 71.19.155.120
 nameserver 71.19.145.215
