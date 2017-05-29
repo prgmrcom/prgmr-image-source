@@ -29,12 +29,15 @@ part / --size=1 --grow --asprimary --fstype=ext4 --label=PRGMRDISK1 --fsoptions=
 -ccid
 -ifd-egate
 -coolkey
+-dnsmasq
 -linux-firmware
 -kernel-firmware
 -NetworkManager
 -NetworkManager-libnm
 -NetworkManager-team
 -NetworkManager-tui
+-NetworkManager-wifi
+-nettle
 polkit
 polkit-pkla-compat
 -tuned
@@ -49,6 +52,8 @@ perl
 python
 logrotate
 screen
+-trousers
+-wpa_supplicant
 %end
 
 %post --nochroot
