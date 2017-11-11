@@ -223,7 +223,7 @@ d-i partman-auto/expert_recipe string root ::                 \
                       $primary{ } $bootable{ }                \
                       method{ format } format{ }              \
                       use_filesystem{ } filesystem{ ext4 }    \
-                      label{ RESCUE }                     \
+                      label{ PRGMRDISK1 }                     \
                       mountpoint{ / } .                       \
 
 d-i partman-auto/choose_recipe select root
@@ -253,7 +253,7 @@ d-i partman-basicfilesystems/no_swap false
 # so this will only work if the disks are the same size.
 #d-i partman-auto/disk string /dev/sda /dev/sdb
 
-# Next you need to specify the physical partitions that will be used.
+# Next you need to specify the physical partitions that will be used. 
 #d-i partman-auto/expert_recipe string \
 #      multiraid ::                                         \
 #              1000 5000 4000 raid                          \
@@ -326,11 +326,6 @@ d-i apt-setup/mirror/error	select	Retry
 
 d-i apt-setup/source boolean false
 
-d-i apt-setup/local0/repository string \
-       http://mirror.prgmr.com/pub/debian wheezy main
-
-d-i apt-setup/local0/source boolean false
-
 # Additional repositories, local[0-9] available
 #d-i apt-setup/local0/comment string local server
 # Enable deb-src lines
@@ -371,14 +366,16 @@ tasksel tasksel/first multiselect ssh-server
 #d-i pkgsel/include string openssh-server build-essential
 
 d-i pkgsel/include string \
+        anacron \
         aptitude \
+        at \
         bash-completion \
         bc \
         bsd-mailx \
-        bsdtar \
         bsdutils \
         bzip2 \
         ca-certificates \
+        dbus \
         dc \
         debconf-utils \
         diffutils \
@@ -389,6 +386,7 @@ d-i pkgsel/include string \
         hostname \
         ifupdown \
         info \
+        installation-report \
         iproute2 \
         iptables \
         ipv6calc \
@@ -404,6 +402,9 @@ d-i pkgsel/include string \
         nano \
         ncurses-base \
         ncurses-term \
+        net-tools \
+        netcat-traditional \
+        ntp \
         patch \
         perl \
         psmisc \
@@ -424,28 +425,7 @@ d-i pkgsel/include string \
         w3m \
         wget \
         whois \
-        xz-utils \
-        aufs-tools \
-        resolvconf \
-        rpm \
-        gdisk \
-        parted \
-        ufsutils \
-        ecryptfs-utils \
-        gfs2-utils \
-        jfsutils \
-        cryptsetup-bin \
-        rng-tools \
-        busybox-static \
-        dosfstools \
-        reiser4progs \
-        ocfs2-tools \
-        sshfs \
-        httpfs2 \
-        curlftpfs \
-        reiserfsprogs \
-        xfsdump \
-        xfsprogs
+        xz-utils
 
 # Whether to upgrade packages after debootstrap.
 # Allowed values: none, safe-upgrade, full-upgrade
@@ -481,7 +461,7 @@ d-i nobootloader/confirmation_common note
 
 # This is fairly safe to set, it makes grub install automatically to the MBR
 # if no other operating system is detected on the machine.
-#d-i grub-installer/only_debian boolean true
+d-i grub-installer/only_debian boolean true
 
 # This one makes grub-installer install to the MBR if it also finds some other
 # OS, which is less safe as it might not be able to boot that other OS.
@@ -494,6 +474,7 @@ d-i nobootloader/confirmation_common note
 #d-i grub-installer/bootdev  string (hd0,0)
 # To install grub to multiple disks:
 #d-i grub-installer/bootdev  string (hd0,0) (hd1,0) (hd2,0)
+d-i grub-installer/bootdev string /dev/xvda
 
 # Optional password for grub, either in clear text
 #d-i grub-installer/password password r00tme
@@ -504,7 +485,7 @@ d-i nobootloader/confirmation_common note
 # Use the following option to add additional boot parameters for the
 # installed system (if supported by the bootloader installer).
 # Note: options passed to the installer will be added automatically.
-d-i debian-installer/add-kernel-opts string console=hvc0 ro rootflags=barrier=0 fastboot aufs=tmpfs
+d-i debian-installer/add-kernel-opts string console=hvc0 ro rootflags=barrier=0
 
 ### Finishing up the installation
 # During installations from serial console, the regular virtual consoles
@@ -585,15 +566,16 @@ d-i partman/early_command \
 #d-i preseed/late_command string apt-install zsh; in-target chsh -s /bin/zsh
 
 d-i preseed/late_command string \
-	in-target apt-get remove -y --purge xkb-data libx11-data cron anacron; \
+	in-target apt-get remove -y --purge libx11-data xkb-data; \
+	in-target apt-get remove -y --purge libx11-data; \
 	in-target apt-get autoremove -y; \
+	in-target bash -c 'DEBIAN_FRONTEND=noninteractive apt-get install -y grub-pc'; \
+	in-target grub-install /dev/xvda; \
 	cp /prgmr-pv-domu* /target; \
 	in-target dpkg -i --force-confnew /prgmr-*; \
 	in-target rm /prgmr*; \
 	cp /target/etc/network/interfaces /etc/network/interfaces; \
 	in-target passwd -d root; \
-	in-target bash -c 'echo davfs2 davfs2/suid_file select true | debconf-set-selections'; \
-	in-target apt-get install -y -o Dpkg::Options::='--force-confold' davfs2; \
-	in-target apt-get clean; \
+	in-target bash -c 'grep -E "^deb(-src)? http://mirror.prgmr.com" /etc/apt/sources.list | sed "s#mirror.prgmr.com/pub#ftp.us.debian.org#g" >> /etc/apt/sources.list'; \
 	in-target bash -c 'dpkg -l | grep -E '^ii' > /var/log/install-list'; \
 	in-target bash -c "rm /etc/ssh/ssh_host_*_key*"

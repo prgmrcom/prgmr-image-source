@@ -34,6 +34,7 @@ part / --size=1 --grow --asprimary --fstype=ext4 --label=PRGMRDISK1 --fsoptions=
 -NetworkManager
 -polkit
 -polkit-pkla-compat
+bash-completion
 bind-utils
 iputils
 net-tools
@@ -52,10 +53,6 @@ cp -p /*ks /mnt/sysimage/usr/local/sbin/
 %end
 
 %post
-[ -e /lib/systemd/system/basic.target.wants/fedora-autorelabel-mark.service ] && \
-	mv /lib/systemd/system/basic.target.wants/fedora-autorelabel-mark.service /lib/systemd/system/sysinit.target.wants/
-[ -e /lib/systemd/system/basic.target.wants/fedora-autorelabel.service ] && \
-	mv /lib/systemd/system/basic.target.wants/fedora-autorelabel.service /lib/systemd/system/sysinit.target.wants/
 echo localhost > /etc/hostname
 echo 'nameserver 71.19.155.120
 nameserver 71.19.145.215
@@ -99,5 +96,24 @@ sed 's/printf '\''%s\\n'\''/#printf '\''%s\\n'\''/g' -i /etc/grub.d/10_linux
 /usr/local/sbin/grub2-mkconfig -o /boot/grub2/grub.cfg
 ln -s /boot/grub/menu.lst /etc/grub.conf
 rpm -qa | sort > /var/log/install-list
+cp -a /etc/selinux/config /etc/selinux/config.orig
+sed 's/enforcing/permissive/g' -i /etc/selinux/config
+touch /.prgmr-firstboot
+cat - /usr/lib64/selinux/selinux-autorelabel > /tmp/prgmr-autorelabel /usr/libexec/selinux/selinux-autorelabel <<'eof'
+#!/bin/bash
+# SELinux and systemd don't play well together when auto-relabeling after
+# an install.  So the first boot is done in permissive mode.  This script
+# will modify the selinux config so that the system will boot with enforcing
+# mode on the second boot.  Then, it runs the normal selinux autorelabel
+# script.  On boots after the first boot, this script is equivalent to
+# selinux-autorelabel.
+# Horrible hack courtesy of cmb@prgmr.com.
+if [ -e /.prgmr-firstboot ] ; then
+  mv /etc/selinux/config.orig /etc/selinux/config
+  rm /.prgmr-firstboot
+fi
+eof
+cp /tmp/prgmr-autorelabel /usr/libexec/selinux/selinux-autorelabel
+chmod 755 /usr/libexec/selinux/selinux-autorelabel
 touch /.autorelabel
 %end

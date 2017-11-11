@@ -1,3 +1,5 @@
+url --url http://mirror.prgmr.com/pub/centos/7/os/x86_64/
+repo --name=centosplus --baseurl=http://mirror.prgmr.com/pub/centos/7/centosplus/x86_64
 install
 text
 lang en_US.UTF-8
@@ -30,6 +32,8 @@ part / --size=1 --grow --asprimary --fstype=ext4 --label=PRGMRDISK1 --fsoptions=
 -ifd-egate
 -coolkey
 -dnsmasq
+-kernel
+kernel-plus
 -linux-firmware
 -kernel-firmware
 -NetworkManager
@@ -52,6 +56,7 @@ perl
 python
 logrotate
 screen
+yum-utils
 -trousers
 -wpa_supplicant
 %end
@@ -61,6 +66,10 @@ cp -p /*ks /mnt/sysimage/usr/local/sbin/
 %end
 
 %post
+yum-config-manager --save --setopt=centosplus.enabled=1
+yum-config-manager --save --setopt=centosplus.includepkgs='kernel*'
+yum-config-manager --save --setopt=base.exclude='kernel*'
+yum-config-manager --save --setopt='updates.exclude=kernel*'
 echo localhost > /etc/hostname
 echo 'nameserver 71.19.155.120
 nameserver 71.19.145.215
