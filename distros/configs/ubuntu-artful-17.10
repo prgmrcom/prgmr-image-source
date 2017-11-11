@@ -393,6 +393,7 @@ d-i pkgsel/include string \
         pv-grub-menu \
         python \
         python3 \
+        resolvconf \
         rsync \
         screen \
         ssh \
@@ -566,5 +567,6 @@ d-i preseed/late_command string \
 	in-target bash -c 'grep -E "^deb(-src)? http://mirrors.kernel.org" /etc/apt/sources.list | sed "s#mirrors.kernel.org#us.archive.ubuntu.com#g" >> /etc/apt/sources.list'; \
 	in-target bash -c 'dpkg -l | grep -E '^ii' > /var/log/install-list'; \
 	in-target bash -c 'systemctl mask systemd-networkd'; \
+	in-target bash -c 'systemctl mask systemd-resolved'; \
 	in-target bash -c "echo 'LLMNR=0' >> /etc/systemd/resolved.conf"; \
 	in-target bash -c "rm /etc/ssh/ssh_host_*_key*"
