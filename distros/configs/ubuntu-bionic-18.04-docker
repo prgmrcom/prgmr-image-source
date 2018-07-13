@@ -362,6 +362,8 @@ d-i pkgsel/include string \
         bc \
         bsdutils \
         ca-certificates \
+        cgroup-bin \
+        cgroup-lite \
         dbus \
         diffutils \
         dnsutils \
@@ -374,12 +376,12 @@ d-i pkgsel/include string \
         iptables \
         iputils-tracepath \
         ipv6calc \
+        libcgroup1 \
         locales \
         lockfile-progs \
         lsof \
         man \
         manpages \
-        mktemp \
         mtr-tiny \
         nano \
         ncurses-base \
@@ -403,6 +405,7 @@ d-i pkgsel/include string \
         tasksel \
         tcpdump \
         telnet \
+        thin-provisioning-tools \
         time \
         traceroute \
         ufw \
@@ -411,7 +414,10 @@ d-i pkgsel/include string \
         w3m \
         wget \
         whois \
-        debconf-utils
+        debconf-utils \
+        lvm2 \
+        xfsprogs \
+        docker.io
 
 # Whether to upgrade packages after debootstrap.
 # Allowed values: none, safe-upgrade, full-upgrade
@@ -562,11 +568,17 @@ d-i preseed/late_command string \
 	cp /prgmr-pv-domu* /target; \
 	in-target dpkg -i --force-confnew /prgmr-*; \
 	in-target rm /prgmr*; \
+	in-target sed -ie 's/,hmac-ripemd160//' /etc/ssh/sshd_config \
+	in-target bash -c 'for i in UsePrivilegeSeparation KeyRegenerationInterval ServerKeyBits RSAAuthentication RhostsRSAAuthentication ; do sed -ie "/$i/d" /etc/ssh/sshd_config' \
 	cp /target/etc/network/interfaces /etc/network/interfaces; \
 	in-target passwd -d root; \
+	in-target bash -c "ln -sf /usr/bin/docker.io /usr/local/bin/docker"; \
+	in-target bash -c "sed -i '$acomplete -F _docker docker' /etc/bash_completion.d/docker.io"; \
 	in-target bash -c 'grep -E "^deb(-src)? http://mirrors.kernel.org" /etc/apt/sources.list | sed "s#mirrors.kernel.org#us.archive.ubuntu.com#g" >> /etc/apt/sources.list'; \
 	in-target bash -c 'dpkg -l | grep -E '^ii' > /var/log/install-list'; \
 	in-target bash -c 'systemctl mask systemd-networkd'; \
+	in-target bash -c 'systemctl mask networkd-dispatcher'; \
 	in-target bash -c 'systemctl mask systemd-resolved'; \
 	in-target bash -c "echo 'LLMNR=0' >> /etc/systemd/resolved.conf"; \
+	in-target bash -c 'rm /etc/systemd/system/multi-user.target.wants/docker.service'; \
 	in-target bash -c "rm /etc/ssh/ssh_host_*_key*"

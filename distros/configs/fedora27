@@ -20,6 +20,8 @@ part / --size=1 --grow --asprimary --fstype=ext4 --label=PRGMRDISK1 --fsoptions=
 -bluez-libs
 -avahi
 -pcsc-lite
+-sssd
+-sssd-common
 -wireless-tools
 -rhpl
 -bluez-utils
@@ -29,18 +31,12 @@ part / --size=1 --grow --asprimary --fstype=ext4 --label=PRGMRDISK1 --fsoptions=
 -ccid
 -ifd-egate
 -coolkey
--dnsmasq
 -linux-firmware
 -kernel-firmware
 -NetworkManager
--NetworkManager-libnm
--NetworkManager-team
--NetworkManager-tui
--NetworkManager-wifi
--nettle
-polkit
-polkit-pkla-compat
--tuned
+-polkit
+-polkit-pkla-compat
+bash-completion
 bind-utils
 iputils
 net-tools
@@ -48,12 +44,11 @@ chrony
 openssh-server
 man
 nano
-perl
+perl-interpreter
+perl-libs
 python
 logrotate
 screen
--trousers
--wpa_supplicant
 %end
 
 %post --nochroot
@@ -61,7 +56,6 @@ cp -p /*ks /mnt/sysimage/usr/local/sbin/
 %end
 
 %post
-yum install -y docker
 echo localhost > /etc/hostname
 echo 'nameserver 71.19.155.120
 nameserver 71.19.145.215
@@ -75,6 +69,7 @@ IPV6_AUTOCONF="no"
 IPV6INIT="no"' > /etc/sysconfig/network-scripts/ifcfg-eth0
 echo "net.ipv6.conf.eth0.autoconf = 0
 net.ipv6.conf.eth0.accept_ra = 0" >> /etc/sysctl.conf
+
 chkconfig network on
 
 passwd -d root
@@ -85,7 +80,6 @@ sed -i	-e 's/^PermitRootLogin yes/PermitRootLogin without-password/g' \
 	 /etc/ssh/sshd_config
 
 echo '
-UseDNS no
 HostKey /etc/ssh/ssh_host_rsa_key
 HostKey /etc/ssh/ssh_host_ecdsa_key
 HostKey /etc/ssh/ssh_host_ed25519_key
@@ -97,7 +91,6 @@ sed -i 's/UUID=[^ ]\+/LABEL=PRGMRDISK1/' /etc/fstab
 
 rename ".ks" "" /usr/local/sbin/*
 chmod +x /usr/local/sbin/*
-mv /usr/local/sbin/52-redo-menu-lst.sh /etc/kernel/postinst.d/52-redo-menu-lst.sh
 sed -i 's/GRUB_CMDLINE_LINUX=.\+/GRUB_CMDLINE_LINUX="console=hvc0 rootflags=barrier=0"/' /etc/default/grub
 echo 'GRUB_DISABLE_LINUX_UUID="true"' >> /etc/default/grub
 echo 'export LINUX_ROOT_DEVICE="LABEL=PRGMRDISK1"' >> /etc/default/grub
@@ -107,20 +100,25 @@ sed 's#LINUX_ROOT_DEVICE=${GRUB_DEVICE}#[ -z ${LINUX_ROOT_DEVICE} ] \&\& LINUX_R
 sed 's/printf '\''%s\\n'\''/#printf '\''%s\\n'\''/g' -i /etc/grub.d/10_linux
 /usr/local/sbin/grub2-mkconfig -o /boot/grub2/grub.cfg
 ln -s /boot/grub/menu.lst /etc/grub.conf
-touch /.autorelabel
-echo "[ -e /etc/rc.d/firstboot ] && /etc/rc.d/firstboot" >> /etc/rc.d/rc.local
-chmod +x /etc/rc.d/rc.local
-cat <<EOF >  /etc/rc.d/firstboot
-#!/bin/bash
-vgcreate docker-vg /dev/xvda2
-docker-storage-setup
-sed 's/xfs/ext4/g' -i /etc/sysconfig/docker-storage
-chkconfig docker on
-service docker start
-mv /etc/rc.d/firstboot /etc/rc.d/firstboot.ran
-EOF
-chmod +x /etc/rc.d/firstboot
-echo 'VG=docker-vg
-SETUP_LVM_THIN_POOL=yes' > /etc/sysconfig/docker-storage-setup
 rpm -qa | sort > /var/log/install-list
+cp -a /etc/selinux/config /etc/selinux/config.orig
+sed 's/enforcing/permissive/g' -i /etc/selinux/config
+touch /.prgmr-firstboot
+cat - /usr/lib64/selinux/selinux-autorelabel > /tmp/prgmr-autorelabel /usr/libexec/selinux/selinux-autorelabel <<'eof'
+#!/bin/bash
+# SELinux and systemd don't play well together when auto-relabeling after
+# an install.  So the first boot is done in permissive mode.  This script
+# will modify the selinux config so that the system will boot with enforcing
+# mode on the second boot.  Then, it runs the normal selinux autorelabel
+# script.  On boots after the first boot, this script is equivalent to
+# selinux-autorelabel.
+# Horrible hack courtesy of cmb@prgmr.com.
+if [ -e /.prgmr-firstboot ] ; then
+  mv /etc/selinux/config.orig /etc/selinux/config
+  rm /.prgmr-firstboot
+fi
+eof
+cp /tmp/prgmr-autorelabel /usr/libexec/selinux/selinux-autorelabel
+chmod 755 /usr/libexec/selinux/selinux-autorelabel
+touch /.autorelabel
 %end
