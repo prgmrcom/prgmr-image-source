@@ -22,6 +22,7 @@ part / --size=1 --grow --asprimary --fstype=ext4 --label=PRGMRDISK1 --fsoptions=
 -pcsc-lite
 -sssd
 -sssd-common
+-sssd-kcm
 -wireless-tools
 -rhpl
 -bluez-utils
@@ -31,9 +32,8 @@ part / --size=1 --grow --asprimary --fstype=ext4 --label=PRGMRDISK1 --fsoptions=
 -ccid
 -ifd-egate
 -coolkey
--linux-firmware
--kernel-firmware
--NetworkManager
+#-linux-firmware
+#-kernel-firmware
 -polkit
 -polkit-pkla-compat
 bash-completion
@@ -48,7 +48,7 @@ perl-interpreter
 perl-libs
 python
 logrotate
-screen
+#screen
 %end
 
 %post --nochroot
@@ -63,7 +63,7 @@ nameserver 71.19.145.215
 sed -i 's/HOSTNAME=.\+//' /etc/sysconfig/network
 echo 'DEVICE="eth0"
 BOOTPROTO="dhcp"
-NM_CONTROLLED="no"
+NM_CONTROLLED="yes"
 ONBOOT="yes"
 IPV6_AUTOCONF="no"
 IPV6INIT="no"' > /etc/sysconfig/network-scripts/ifcfg-eth0

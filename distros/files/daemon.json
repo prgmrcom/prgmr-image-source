@@ -1,0 +1,8 @@
+{
+    "storage-driver": "devicemapper",
+    "storage-opts": [
+	"dm.thinpooldev=docker--vg-docker--pool",
+	"dm.blkdiscard=false",
+	"dm.mountopt=nodiscard"
+    ]
+}

@@ -1,0 +1,15 @@
+[Unit]
+Before=sshd.service systemd-user-sessions.service
+ConditionPathExists=!/etc/pacman.d/gnupg
+Description=Prgmr script to refresh keys and perform final cleanup
+
+[Service]
+Type=oneshot
+ExecStart=pacman-key --init
+ExecStart=pacman-key --populate archlinux
+RemainAfterExit=yes
+StandardOutput=journal+console
+Before=sshd.service systemd-user-sessions.service
+
+[Install]
+WantedBy=multi-user.target

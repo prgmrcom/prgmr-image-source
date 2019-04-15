@@ -1,0 +1,63 @@
+#!/bin/bash
+
+# update package manager files
+pacman -Syu
+
+# Disable ipv6 autoconfig
+install -dm755 -o root -g root /etc/sysctl.d
+touch /etc/sysctl.d/40-disable-ipv6-autoconf.conf
+echo "net.ipv6.conf.eth0.autoconf=0" >> /etc/sysctl.d/40-ipv6.conf
+echo "net.ipv6.conf.eth0.use_tempaddr=0" >> /etc/sysctl.d/40-ipv6.conf
+echo "net.ipv6.conf.eth0.accept_ra=0" >> /etc/sysctl.d/40-disable-ipv6-autoconf.conf
+
+sed -r -i \
+    -e 's/^#?MulticastDNS=.*$/MulticastDNS=no/' \
+    -e 's/^#?LLMNR=.*$/LLMNR=no/' \
+    /etc/systemd/resolved.conf
+
+# ssh server configuration
+
+sed -r -i -e 's/^#?PermitRootLogin yes/PermitRootLogin without-password/g' \
+-e 's/^#?PasswordAuthentication yes/PasswordAuthentication no/g' \
+-e 's/^#Protocol 2$/Protocol 2/g' \
+/etc/ssh/sshd_config
+
+# Add an NTP server pool to chrony
+sed -i -e '/^! pool 3\.arch/s/^! //' /etc/chrony.conf
+
+# configure grub
+echo '(hd0) /dev/xvda' > /boot/grub/device.map
+grub-install /dev/xvda
+grub-mkconfig -o /boot/grub/grub.cfg
+rm /boot/grub/device.map
+
+# Get rid of search statements with uuids in grub.cfg.
+# There's no way to make it permanent; they'll come back as soon
+# as someone runs grub-mkconfig on the installed system, but by then
+# it won't matter quite as much.
+sed -r -i -e 's/^[[:space:]]+search .*$/true/g' /boot/grub/grub.cfg
+
+# clear ssh & pacman keys
+rm -f /etc/ssh/ssh*key*
+rm -rf /etc/pacman.d/gnupg
+
+# Clear the package cache (bloats the archive).
+yes |pacman -Scc
+
+services=(systemd-networkd systemd-resolved chronyd sshd prgmr-pacman-init)
+for service in "${services[@]}" ; do
+  systemctl enable "${service}"
+done
+
+echo localhost > /etc/hostname
+rm -f /etc/machine-id
+
+# Generate locale and set locale.
+sed -i -r -e 's/^#  en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen
+locale-gen
+echo 'KEYMAP=us' > /etc/vconsole.conf
+echo 'LANG=en_US.UTF-8' >> /etc/locale.conf
+echo 'LC_MESSAGES=en_US.UTF-8' >> /etc/locale.conf
+
+# Generate install log.
+pacman -Q > /var/log/install-list

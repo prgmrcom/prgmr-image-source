@@ -326,11 +326,6 @@ d-i apt-setup/mirror/error	select	Retry
 
 d-i apt-setup/source boolean false
 
-d-i apt-setup/local0/repository string \
-       http://mirror.prgmr.com/pub/debian wheezy main
-
-d-i apt-setup/local0/source boolean false
-
 # Additional repositories, local[0-9] available
 #d-i apt-setup/local0/comment string local server
 # Enable deb-src lines
@@ -404,6 +399,8 @@ d-i pkgsel/include string \
         nano \
         ncurses-base \
         ncurses-term \
+        net-tools \
+        netcat-traditional \
         patch \
         perl \
         psmisc \
@@ -425,23 +422,20 @@ d-i pkgsel/include string \
         wget \
         whois \
         xz-utils \
-        aufs-tools \
         resolvconf \
         rpm \
         gdisk \
         parted \
-        ufsutils \
         ecryptfs-utils \
         gfs2-utils \
         jfsutils \
         cryptsetup-bin \
-        rng-tools \
+        rng-tools5 \
         busybox-static \
         dosfstools \
         reiser4progs \
         ocfs2-tools \
         sshfs \
-        httpfs2 \
         curlftpfs \
         reiserfsprogs \
         xfsdump \
@@ -504,7 +498,7 @@ d-i nobootloader/confirmation_common note
 # Use the following option to add additional boot parameters for the
 # installed system (if supported by the bootloader installer).
 # Note: options passed to the installer will be added automatically.
-d-i debian-installer/add-kernel-opts string console=hvc0 ro rootflags=barrier=0 fastboot aufs=tmpfs
+d-i debian-installer/add-kernel-opts string console=hvc0 ro rootflags=barrier=0 fastboot
 
 ### Finishing up the installation
 # During installations from serial console, the regular virtual consoles

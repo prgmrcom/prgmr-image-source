@@ -1,0 +1,42 @@
+#!/bin/bash
+mkdir /dev/pts
+mkdir /dev/shm
+mount -t devpts none /dev/pts
+
+# Partition the disk
+echo -e 'o\nn\np\n1\n\n\nw' | fdisk -u /dev/xvda
+mkfs.ext4 -F /dev/xvda1
+e2label /dev/xvda1 PRGMRDISK1
+
+# Select the mirrors
+
+echo "Server = http://mirrors.kernel.org/archlinux/\$repo/os/\$arch" > /etc/pacman.d/mirrorlist
+echo "Server = http://mirrors.xmission.com/archlinux/\$repo/os/\$arch" >> /etc/pacman.d/mirrorlist
+
+pacman-key --init
+pacman-key --populate archlinux
+
+# install the system and change into new root
+mount -o defaults,barrier=0,errors=remount-ro /dev/xvda1 /mnt
+pacstrap /mnt base grub openssh chrony sudo net-tools
+genfstab -L -p /mnt >> /mnt/etc/fstab
+# genfstab isn't actually using labels here when it should be.  Maybe
+# it's broken in this kind of bootstrap environment.
+sed -i -e 's;^/dev/xvda1;LABEL=PRGMRDISK1;' /mnt/etc/fstab
+sed -i -e 's;nobarrier;barrier=0;' /mnt/etc/fstab
+install -Dm644 /etc/resolv.conf /mnt/etc/resolv.conf
+install -Dm644 /archinstall-scripts/grub-defaults /mnt/etc/default/grub
+install -Dm644 /archinstall-scripts/00-eth0.network /mnt/etc/systemd/network/00-eth0.network
+install -Dm644 /archinstall-scripts/prgmr-pacman-init.service /mnt/etc/systemd/system/prgmr-pacman-init.service
+install -Dm755 /archinstall-scripts/archinstall_finalize /mnt/usr/local/sbin/archinstall_finalize
+
+arch-chroot /mnt /usr/local/sbin/archinstall_finalize
+rm -f /mnt/usr/local/sbin/archinstall_finalize
+# Can't create resolv.conf symlink in the chroot, because the arch-chroot
+# script bind mounts over it.
+rm /mnt/etc/resolv.conf
+ln -sf /run/systemd/resolve/resolv.conf /mnt/etc/resolv.conf
+sync
+mount -o remount,ro /mnt
+umount /mnt
+poweroff -f
