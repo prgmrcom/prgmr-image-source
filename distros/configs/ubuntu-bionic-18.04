@@ -561,13 +561,13 @@ d-i preseed/late_command string \
 	cp /prgmr-pv-domu* /target; \
 	in-target dpkg -i --force-confnew /prgmr-*; \
 	in-target rm /prgmr*; \
-	in-target sed -ie 's/,hmac-ripemd160//' /etc/ssh/sshd_config \
-	in-target bash -c 'for i in UsePrivilegeSeparation KeyRegenerationInterval ServerKeyBits RSAAuthentication RhostsRSAAuthentication ; do sed -ie "/$i/d" /etc/ssh/sshd_config' \
+	in-target bash -c 'for i in UsePrivilegeSeparation KeyRegenerationInterval ServerKeyBits RSAAuthentication RhostsRSAAuthentication ; do sed -i -e "/$i/d" /etc/ssh/sshd_config ; done' \
 	cp /target/etc/network/interfaces /etc/network/interfaces; \
 	in-target passwd -d root; \
 	in-target bash -c 'grep -E "^deb(-src)? http://mirrors.kernel.org" /etc/apt/sources.list | sed "s#mirrors.kernel.org#us.archive.ubuntu.com#g" >> /etc/apt/sources.list'; \
 	in-target bash -c 'dpkg -l | grep -E '^ii' > /var/log/install-list'; \
 	in-target bash -c 'systemctl mask systemd-networkd'; \
+	in-target bash -c 'systemctl mask systemd-networkd-wait-online'; \
 	in-target bash -c 'systemctl mask networkd-dispatcher'; \
 	in-target bash -c 'systemctl mask systemd-resolved'; \
 	in-target bash -c "echo 'LLMNR=0' >> /etc/systemd/resolved.conf"; \

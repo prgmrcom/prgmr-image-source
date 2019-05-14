@@ -49,6 +49,11 @@ for service in "${services[@]}" ; do
   systemctl enable "${service}"
 done
 
+# Blacklist kvm-intel and kvm.
+cat > /etc/modprobe.d/blacklist-kvm.conf <<'EOF'
+blacklist kvm-intel
+blacklist kvm
+EOF
 echo localhost > /etc/hostname
 rm -f /etc/machine-id
 
