@@ -277,7 +277,7 @@ d-i base-installer/install-recommends boolean false
 
 # The kernel image (meta) package to be installed; "none" can be used if no
 # kernel is to be installed.
-d-i base-installer/kernel/image string linux-virtual
+d-i base-installer/kernel/image string linux-virtual-hwe-18.04-edge
 
 ### Account setup
 # Skip creation of a root account (normal user account will be able to
