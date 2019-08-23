@@ -48,7 +48,7 @@ udhcpc eth0
 # Make install root, mount the root filesystem, and extract the bootstrap archive.
 mkdir /mnt
 mkdir /airootfs
-mount -t iso9660 /dev/cdrom /mnt
+mount -t iso9660 /dev/xvdd /mnt
 mount -t squashfs -o loop /mnt/arch/x86_64/airootfs.sfs /airootfs
 mkdir -p /run/workdir
 mkdir -p /run/lowerdir

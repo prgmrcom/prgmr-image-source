@@ -320,7 +320,7 @@ d-i base-installer/kernel/image string linux-image
 #d-i apt-setup/use_mirror boolean false
 # Select which update services to use; define the mirrors to be used.
 # Values shown below are the normal defaults.
-d-i apt-setup/services-select multiselect security
+#d-i apt-setup/services-select multiselect security, updates
 #d-i apt-setup/security_host string security.debian.org
 d-i apt-setup/mirror/error	select	Retry
 
@@ -398,10 +398,11 @@ d-i pkgsel/include string \
         m4 \
         man \
         manpages \
-        mktemp \
         nano \
         ncurses-base \
         ncurses-term \
+        net-tools \
+        netcat-traditional \
         ntp \
         patch \
         perl \
@@ -414,7 +415,6 @@ d-i pkgsel/include string \
         ssh \
         ssl-cert \
         sudo \
-        sysvinit-core \
         tasksel \
         telnet \
         time \
@@ -428,7 +428,7 @@ d-i pkgsel/include string \
 
 # Whether to upgrade packages after debootstrap.
 # Allowed values: none, safe-upgrade, full-upgrade
-d-i pkgsel/upgrade select full-upgrade
+d-i pkgsel/upgrade select safe-upgrade
 
 # Language pack selection
 #d-i pkgsel/language-packs multiselect en
@@ -447,11 +447,11 @@ popularity-contest popularity-contest/participate boolean false
 ### Boot loader installation
 # Grub is the default boot loader (for x86). If you want lilo installed
 # instead, uncomment this:
-#d-i grub-installer/skip boolean true
+d-i grub-installer/skip boolean true
 # To also skip installing lilo, and install no bootloader, uncomment this
 # too:
-#d-i lilo-installer/skip boolean true
-#d-i nobootloader/confirmation_common note
+d-i lilo-installer/skip boolean true
+d-i nobootloader/confirmation_common note
 
 # With a few exceptions for unusual partitioning setups, GRUB 2 is now the
 # default. If you need GRUB Legacy for some particular reason, then
@@ -565,8 +565,10 @@ d-i partman/early_command \
 #d-i preseed/late_command string apt-install zsh; in-target chsh -s /bin/zsh
 
 d-i preseed/late_command string \
-	in-target apt-get remove -y --purge libx11-data xkb-data systemd; \
+	in-target apt-get remove -y --purge libx11-data xkb-data; \
 	in-target apt-get autoremove -y; \
+	in-target bash -c 'DEBIAN_FRONTEND=noninteractive apt-get install -y grub-pc'; \
+	in-target grub-install /dev/xvda; \
 	cp /prgmr-pv-domu* /target; \
 	in-target dpkg -i --force-confnew /prgmr-*; \
 	in-target rm /prgmr*; \

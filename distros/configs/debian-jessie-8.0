@@ -427,7 +427,7 @@ d-i pkgsel/include string \
 
 # Whether to upgrade packages after debootstrap.
 # Allowed values: none, safe-upgrade, full-upgrade
-d-i pkgsel/upgrade select safe-upgrade
+d-i pkgsel/upgrade select full-upgrade
 
 # Language pack selection
 #d-i pkgsel/language-packs multiselect en
@@ -573,5 +573,6 @@ d-i preseed/late_command string \
 	cp /target/etc/network/interfaces /etc/network/interfaces; \
 	in-target passwd -d root; \
 	in-target bash -c 'grep -E "^deb(-src)? http://mirror.prgmr.com" /etc/apt/sources.list | sed "s#mirror.prgmr.com/pub#ftp.us.debian.org#g" >> /etc/apt/sources.list'; \
+	in-target bash -c 'sed -r -i -e "/^deb-src http:\\/\\/mirror.prgmr.com/d" /etc/apt/sources.list'; \
 	in-target bash -c 'dpkg -l | grep -E '^ii' > /var/log/install-list'; \
 	in-target bash -c "rm /etc/ssh/ssh_host_*_key*"
