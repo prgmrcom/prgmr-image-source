@@ -83,9 +83,13 @@ echo '
 HostKey /etc/ssh/ssh_host_rsa_key
 HostKey /etc/ssh/ssh_host_ecdsa_key
 HostKey /etc/ssh/ssh_host_ed25519_key
-MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512,hmac-sha2-256,umac-128@openssh.com
-Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
-KexAlgorithms curve25519-sha256@libssh.org,ecdh-sha2-nistp521,ecdh-sha2-nistp384,ecdh-sha2-nistp256,diffie-hellman-group-exchange-sha256' >> /etc/ssh/sshd_config
+# Ciphers, MACs, KexAlgorithms and GSSAPIKexAlgorithms will not have any
+# effect here. They will be overridden by command-line options passed on
+# the server start up.
+# To opt out, uncomment a line with redefinition of  CRYPTO_POLICY=
+# variable in  /etc/sysconfig/sshd  to overwrite the policy.
+# For more information, see manual page for update-crypto-policies(8).
+' >> /etc/ssh/sshd_config
 
 sed -i 's/UUID=[^ ]\+/LABEL=PRGMRDISK1/' /etc/fstab
 
