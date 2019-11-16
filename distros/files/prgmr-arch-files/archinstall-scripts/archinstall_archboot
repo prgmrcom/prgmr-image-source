@@ -18,7 +18,22 @@ pacman-key --populate archlinux
 
 # install the system and change into new root
 mount -o defaults,barrier=0,errors=remount-ro /dev/xvda1 /mnt
-pacstrap /mnt base grub openssh chrony sudo net-tools
+
+pacstrap /mnt \
+	 base \
+	 chrony \
+	 grub \
+	 linux \
+	 man-db \
+	 man-pages \
+	 nano \
+	 net-tools \
+	 openssh \
+	 sudo \
+	 texinfo \
+	 vi \
+	 which
+
 genfstab -L -p /mnt >> /mnt/etc/fstab
 # genfstab isn't actually using labels here when it should be.  Maybe
 # it's broken in this kind of bootstrap environment.
@@ -28,6 +43,12 @@ install -Dm644 /etc/resolv.conf /mnt/etc/resolv.conf
 install -Dm644 /archinstall-scripts/grub-defaults /mnt/etc/default/grub
 install -Dm644 /archinstall-scripts/00-eth0.network /mnt/etc/systemd/network/00-eth0.network
 install -Dm644 /archinstall-scripts/prgmr-pacman-init.service /mnt/etc/systemd/system/prgmr-pacman-init.service
+
+# Force chronyd to run after random-seed.service, because otherwise it
+# will try to do a humongous uninitialized urandom read.
+install -Dm644 /archinstall-scripts/10-after-random-seed.conf \
+	/mnt/etc/systemd/system/chronyd.service.d/10-after-random-seed.conf
+
 install -Dm755 /archinstall-scripts/archinstall_finalize /mnt/usr/local/sbin/archinstall_finalize
 
 arch-chroot /mnt /usr/local/sbin/archinstall_finalize

@@ -1,0 +1,130 @@
+install
+text
+lang en_US.UTF-8
+keyboard us
+network --device eth0 --bootproto=dhcp
+firewall --enabled --port=22:tcp
+selinux --enforcing
+timezone --utc America/Los_Angeles
+bootloader --location=mbr --driveorder=xvda --append="console=ttyS0" --timeout=5
+rootpw --plaintext password
+poweroff
+
+zerombr
+clearpart --all --initlabel --drives=xvda
+part / --size=1 --grow --asprimary --fstype=ext4 --label=PRGMRDISK1 --fsoptions="defaults,barrier=0,errors=remount-ro"
+
+%packages
+@core
+-autofs
+-bluez-libs
+-avahi
+-pcsc-lite
+-sssd
+-sssd-common
+-sssd-kcm
+-wireless-tools
+-rhpl
+-bluez-utils
+-cups
+-system-config-network-tui
+-firstboot-tui
+-ccid
+-ifd-egate
+-coolkey
+#-linux-firmware
+#-kernel-firmware
+-polkit
+-polkit-pkla-compat
+bash-completion
+bind-utils
+iputils
+net-tools
+chrony
+openssh-server
+man
+nano
+perl-interpreter
+perl-libs
+python3
+logrotate
+#screen
+%end
+
+%post --nochroot
+cp -p /*ks /mnt/sysimage/usr/local/sbin/
+%end
+
+%post
+echo localhost > /etc/hostname
+echo 'nameserver 71.19.155.120
+nameserver 71.19.145.215
+#nameserver 8.8.8.8' > /etc/resolv.conf
+sed -i 's/HOSTNAME=.\+//' /etc/sysconfig/network
+echo 'DEVICE="eth0"
+BOOTPROTO="dhcp"
+NM_CONTROLLED="yes"
+ONBOOT="yes"
+IPV6_AUTOCONF="no"
+IPV6INIT="no"' > /etc/sysconfig/network-scripts/ifcfg-eth0
+echo "net.ipv6.conf.eth0.autoconf = 0
+net.ipv6.conf.eth0.accept_ra = 0" >> /etc/sysctl.conf
+
+chkconfig network on
+
+passwd -d root
+
+sed -i	-e 's/^PermitRootLogin yes/PermitRootLogin without-password/g' \
+        -e 's/#PermitRootLogin yes/PermitRootLogin without-password/g' \
+	  		-e 's/^PasswordAuthentication yes/PasswordAuthentication no/g' \
+	 /etc/ssh/sshd_config
+
+echo '
+HostKey /etc/ssh/ssh_host_rsa_key
+HostKey /etc/ssh/ssh_host_ecdsa_key
+HostKey /etc/ssh/ssh_host_ed25519_key
+# Ciphers, MACs, KexAlgorithms and GSSAPIKexAlgorithms will not have any
+# effect here. They will be overridden by command-line options passed on
+# the server start up.
+# To opt out, uncomment a line with redefinition of  CRYPTO_POLICY=
+# variable in  /etc/sysconfig/sshd  to overwrite the policy.
+# For more information, see manual page for update-crypto-policies(8).
+' >> /etc/ssh/sshd_config
+
+sed -i 's/UUID=[^ ]\+/LABEL=PRGMRDISK1/' /etc/fstab
+
+rename ".ks" "" /usr/local/sbin/*
+chmod +x /usr/local/sbin/*
+sed -i 's/GRUB_CMDLINE_LINUX=.\+/GRUB_CMDLINE_LINUX="console=ttyS0 rootflags=barrier=0 module_blacklist=xen_kbdfront"/' /etc/default/grub
+echo 'GRUB_DISABLE_UUID="true"' >> /etc/default/grub
+echo 'GRUB_DISABLE_LINUX_UUID="true"' >> /etc/default/grub
+echo 'export LINUX_ROOT_DEVICE="LABEL=PRGMRDISK1"' >> /etc/default/grub
+sed -i 's/GRUB_TERMINAL_OUTPUT=.\+/GRUB_TERMINAL="serial console"/' /etc/default/grub
+echo 'GRUB_SERIAL_COMMAND="serial --unit=0 --speed=115200"' >> /etc/default/grub
+sed 's#LINUX_ROOT_DEVICE=${GRUB_DEVICE}#[ -z ${LINUX_ROOT_DEVICE} ] \&\& LINUX_ROOT_DEVICE=${GRUB_DEVICE}#' -i /etc/grub.d/10_linux
+sed 's/printf '\''%s\\n'\''/#printf '\''%s\\n'\''/g' -i /etc/grub.d/10_linux
+grub2-mkconfig -o /boot/grub2/grub.cfg
+grub2-editenv /boot/grub2/grubenv set boot=hd0,msdos1
+grub2-editenv /boot/grub2/grubenv set root=hd0,msdos1
+rpm -qa | sort > /var/log/install-list
+cp -a /etc/selinux/config /etc/selinux/config.orig
+sed 's/enforcing/permissive/g' -i /etc/selinux/config
+touch /.prgmr-firstboot
+cat - /usr/lib64/selinux/selinux-autorelabel > /tmp/prgmr-autorelabel /usr/libexec/selinux/selinux-autorelabel <<'eof'
+#!/bin/bash
+# SELinux and systemd don't play well together when auto-relabeling after
+# an install.  So the first boot is done in permissive mode.  This script
+# will modify the selinux config so that the system will boot with enforcing
+# mode on the second boot.  Then, it runs the normal selinux autorelabel
+# script.  On boots after the first boot, this script is equivalent to
+# selinux-autorelabel.
+# Horrible hack courtesy of cmb@prgmr.com.
+if [ -e /.prgmr-firstboot ] ; then
+  mv /etc/selinux/config.orig /etc/selinux/config
+  rm /.prgmr-firstboot
+fi
+eof
+cp /tmp/prgmr-autorelabel /usr/libexec/selinux/selinux-autorelabel
+chmod 755 /usr/libexec/selinux/selinux-autorelabel
+touch /.autorelabel
+%end

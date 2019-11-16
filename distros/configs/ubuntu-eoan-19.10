@@ -384,7 +384,6 @@ d-i pkgsel/include string \
         ncurses-base \
         ncurses-term \
         net-tools \
-        ntp \
         parted \
         patch \
         perl \
