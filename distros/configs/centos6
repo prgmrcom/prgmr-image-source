@@ -95,9 +95,10 @@ sed -i	-e 's/^PermitRootLogin yes/PermitRootLogin without-password/g' \
 echo '
 UseDNS no
 HostKey /etc/ssh/ssh_host_rsa_key
-MACs hmac-sha2-512,hmac-sha2-256,hmac-ripemd160
+# Added by prgmr per https://infosec.mozilla.org/guidelines/openssh
+MACs hmac-sha2-512,hmac-sha2-256
 Ciphers aes256-ctr,aes192-ctr,aes128-ctr
-KexAlgorithms diffie-hellman-group-exchange-sha256,diffie-hellman-group-exchange-sha1' >> /etc/ssh/sshd_config
+KexAlgorithms diffie-hellman-group-exchange-sha256' >> /etc/ssh/sshd_config
 
 sed -i 's/UUID=[^ ]\+/LABEL=PRGMRDISK1/' /etc/fstab
 
@@ -105,4 +106,10 @@ sed -i 's/root=UUID=.\+/root=LABEL=PRGMRDISK1 console=hvc0 rootflags=barrier=0/'
 rpm -qa | sort > /var/log/install-list
 touch /.autorelabel
 chkconfig ntpd on
+[ -L /var/lib/dbus/machine-id ] || rm -f /var/lib/dbus/machine-id
+rm -f /etc/machine-id
+# I cannot seem to be able to blacklist this in grub config.  Blacklisting
+# it in /etc/modprobe.d is sufficient, and the initramfs does not need
+# a rebuild.
+echo 'blacklist i2c_piix4' > /etc/modprobe.d/blacklist-i2c-piix4.conf
 %end

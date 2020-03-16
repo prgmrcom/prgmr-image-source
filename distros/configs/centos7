@@ -88,6 +88,7 @@ UseDNS no
 HostKey /etc/ssh/ssh_host_rsa_key
 HostKey /etc/ssh/ssh_host_ecdsa_key
 HostKey /etc/ssh/ssh_host_ed25519_key
+# Added by prgmr per https://infosec.mozilla.org/guidelines/openssh
 MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512,hmac-sha2-256,umac-128@openssh.com
 Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
 KexAlgorithms curve25519-sha256@libssh.org,ecdh-sha2-nistp521,ecdh-sha2-nistp384,ecdh-sha2-nistp256,diffie-hellman-group-exchange-sha256' >> /etc/ssh/sshd_config
@@ -97,7 +98,7 @@ sed -i 's/UUID=[^ ]\+/LABEL=PRGMRDISK1/' /etc/fstab
 rename ".ks" "" /usr/local/sbin/*
 chmod +x /usr/local/sbin/*
 mv /usr/local/sbin/52-redo-menu-lst.sh /etc/kernel/postinst.d/52-redo-menu-lst.sh
-sed -i 's/GRUB_CMDLINE_LINUX=.\+/GRUB_CMDLINE_LINUX="console=hvc0 rootflags=barrier=0 module_blacklist=xen_kbdfront"/' /etc/default/grub
+sed -i 's/GRUB_CMDLINE_LINUX=.\+/GRUB_CMDLINE_LINUX="console=hvc0 rootflags=barrier=0 module_blacklist=xen_kbdfront,i2c_piix4"/' /etc/default/grub
 echo 'GRUB_DISABLE_LINUX_UUID="true"' >> /etc/default/grub
 echo 'export LINUX_ROOT_DEVICE="LABEL=PRGMRDISK1"' >> /etc/default/grub
 sed -i 's/GRUB_TERMINAL_OUTPUT=.\+/GRUB_TERMINAL="serial console"/' /etc/default/grub
@@ -108,4 +109,6 @@ sed 's/printf '\''%s\\n'\''/#printf '\''%s\\n'\''/g' -i /etc/grub.d/10_linux
 ln -s /boot/grub/menu.lst /etc/grub.conf
 rpm -qa | sort > /var/log/install-list
 touch /.autorelabel
+[ -L /var/lib/dbus/machine-id ] || rm -f /var/lib/dbus/machine-id
+rm -f /etc/machine-id
 %end

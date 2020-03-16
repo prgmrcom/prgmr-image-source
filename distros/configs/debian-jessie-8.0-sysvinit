@@ -564,15 +564,46 @@ d-i partman/early_command \
 # packages and run commands in the target system.
 #d-i preseed/late_command string apt-install zsh; in-target chsh -s /bin/zsh
 
+# prgmr uses serial console only, no virtual display or keyboard.
+# Rebuild the initramfs to exclude modules not needed in our environment.
+# Harden the sshd config per https://infosec.mozilla.org/guidelines/openssh
+# Remove the root password as we disable password authentication via ssh.
+# Add our local debian mirror to the apt sources list in addition to the
+# main mirrors.
+# Otherwise make the image generic.
 d-i preseed/late_command string \
 	in-target apt-get remove -y --purge libx11-data xkb-data systemd; \
 	in-target apt-get autoremove -y; \
+	in-target sed -r -i -e 's/^#?[[:space:]]*GRUB_CMDLINE_LINUX_DEFAULT=.*$/GRUB_CMDLINE_LINUX_DEFAULT=""/' /etc/default/grub; \
+	in-target sed -r -i -e 's/^#?[[:space:]]*GRUB_CMDLINE_LINUX=.*$/GRUB_CMDLINE_LINUX="console=hvc0 rootflags=barrier=0 initcall_blacklist=xenkbd_init"/' /etc/default/grub; \
+	in-target sed -r -i -e 's/^#?[[:space:]]*GRUB_TIMEOUT=.*$/GRUB_TIMEOUT=10/' /etc/default/grub; \
+	in-target sed -r -i -e 's/^#?[[:space:]]*GRUB_DISABLE_LINUX_UUID=.*$/GRUB_DISABLE_LINUX_UUID=true/' /etc/default/grub; \
+	in-target sed -r -i -e 's/^#?[[:space:]]*GRUB_TERMINAL=.*$/GRUB_TERMINAL="serial console"/' /etc/default/grub; \
+	in-target sed -i -e '$aexport LINUX_ROOT_DEVICE="LABEL=PRGMRDISK1"' /etc/default/grub; \
+	in-target sed -i -e '$aGRUB_SERIAL_COMMAND="serial --unit=0 --speed=115200"' /etc/default/grub; \
+	in-target sed -i -e '/^HostKey \/etc\/ssh\/ssh_host_dsa_key/d' /etc/ssh/sshd_config; \
+	in-target sed -r -i -e 's/^#?[[:space:]]*PasswordAuthentication[[:space:]]*(yes|no)$/PasswordAuthentication no/' /etc/ssh/sshd_config; \
+	in-target sed -i -e '$aAuthenticationMethods publickey' /etc/ssh/sshd_config; \
+	in-target sed -i -e '$aMACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512,hmac-sha2-256,umac-128@openssh.com' /etc/ssh/sshd_config; \
+	in-target sed -i -e '$aCiphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr' /etc/ssh/sshd_config; \
+	in-target sed -i -e '$aKexAlgorithms curve25519-sha256@libssh.org,ecdh-sha2-nistp521,ecdh-sha2-nistp384,ecdh-sha2-nistp256,diffie-hellman-group-exchange-sha256' /etc/ssh/sshd_config; \
+	in-target sed -i -e '$aUseDNS no' /etc/ssh/sshd_config; \
+	cp /debian-hosts /target/etc/hosts; \
+	chmod 644 /target/etc/hosts; \
+	chown root:root /target/etc/hosts; \
+	cp /debian-network-interfaces /target/etc/network/interfaces; \
+	chmod 644 /target/etc/network/interfaces; \
+	chown root:root /target/etc/network/interfaces; \
+	in-target bash -c 'echo localhost > /etc/hostname'; \
 	cp /prgmr-pv-domu* /target; \
 	in-target dpkg -i --force-confnew /prgmr-*; \
 	in-target rm /prgmr*; \
 	cp /target/etc/network/interfaces /etc/network/interfaces; \
+	in-target update-initramfs -u -k all; \
 	in-target passwd -d root; \
 	in-target bash -c 'grep -E "^deb(-src)? http://mirror.prgmr.com" /etc/apt/sources.list | sed "s#mirror.prgmr.com/pub#ftp.us.debian.org#g" >> /etc/apt/sources.list'; \
 	in-target bash -c 'sed -r -i -e "/^deb-src http:\\/\\/mirror.prgmr.com/d" /etc/apt/sources.list'; \
 	in-target bash -c 'dpkg -l | grep -E '^ii' > /var/log/install-list'; \
+ in-target bash -c '[ -L /var/lib/dbus/machine-id ] || rm -f /var/lib/dbus/machine-id'; \
+ in-target bash -c 'rm -f /etc/machine-id'; \
 	in-target bash -c "rm /etc/ssh/ssh_host_*_key*"

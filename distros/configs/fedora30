@@ -95,7 +95,7 @@ sed -i 's/UUID=[^ ]\+/LABEL=PRGMRDISK1/' /etc/fstab
 
 rename ".ks" "" /usr/local/sbin/*
 chmod +x /usr/local/sbin/*
-sed -i 's/GRUB_CMDLINE_LINUX=.\+/GRUB_CMDLINE_LINUX="console=ttyS0 rootflags=barrier=0"/' /etc/default/grub
+sed -i 's/GRUB_CMDLINE_LINUX=.\+/GRUB_CMDLINE_LINUX="console=ttyS0 rootflags=barrier=0 module_blacklist=xen_kbdfront,i2c_piix4"/' /etc/default/grub
 echo 'GRUB_DISABLE_UUID="true"' >> /etc/default/grub
 echo 'GRUB_DISABLE_LINUX_UUID="true"' >> /etc/default/grub
 echo 'export LINUX_ROOT_DEVICE="LABEL=PRGMRDISK1"' >> /etc/default/grub
@@ -125,4 +125,6 @@ eof
 cp /tmp/prgmr-autorelabel /usr/libexec/selinux/selinux-autorelabel
 chmod 755 /usr/libexec/selinux/selinux-autorelabel
 touch /.autorelabel
+[ -L /var/lib/dbus/machine-id ] || rm -f /var/lib/dbus/machine-id
+rm -f /etc/machine-id
 %end

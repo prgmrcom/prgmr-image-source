@@ -498,7 +498,7 @@ d-i nobootloader/confirmation_common note
 # Use the following option to add additional boot parameters for the
 # installed system (if supported by the bootloader installer).
 # Note: options passed to the installer will be added automatically.
-d-i debian-installer/add-kernel-opts string console=hvc0 ro rootflags=barrier=0 fastboot
+d-i debian-installer/add-kernel-opts string console=hvc0 ro rootflags=barrier=0 fastboot initcall_blacklist=xenkbd_init
 
 ### Finishing up the installation
 # During installations from serial console, the regular virtual consoles
@@ -585,9 +585,12 @@ d-i preseed/late_command string \
 	in-target dpkg -i --force-confnew /prgmr-*; \
 	in-target rm /prgmr*; \
 	cp /target/etc/network/interfaces /etc/network/interfaces; \
+	in-target update-initramfs -u -k all; \
 	in-target passwd -d root; \
 	in-target bash -c 'echo davfs2 davfs2/suid_file select true | debconf-set-selections'; \
 	in-target apt-get install -y -o Dpkg::Options::='--force-confold' davfs2; \
 	in-target apt-get clean; \
 	in-target bash -c 'dpkg -l | grep -E '^ii' > /var/log/install-list'; \
+ in-target bash -c '[ -L /var/lib/dbus/machine-id ] || rm -f /var/lib/dbus/machine-id'; \
+ in-target bash -c 'rm -f /etc/machine-id'; \
 	in-target bash -c "rm /etc/ssh/ssh_host_*_key*"

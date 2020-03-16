@@ -98,7 +98,7 @@ sed -i 's/UUID=[^ ]\+/LABEL=PRGMRDISK1/' /etc/fstab
 rename ".ks" "" /usr/local/sbin/*
 chmod +x /usr/local/sbin/*
 mv /usr/local/sbin/52-redo-menu-lst.sh /etc/kernel/postinst.d/52-redo-menu-lst.sh
-sed -i 's/GRUB_CMDLINE_LINUX=.\+/GRUB_CMDLINE_LINUX="console=hvc0 rootflags=barrier=0 module_blacklist=xen_kbdfront"/' /etc/default/grub
+sed -i 's/GRUB_CMDLINE_LINUX=.\+/GRUB_CMDLINE_LINUX="console=hvc0 rootflags=barrier=0 module_blacklist=xen_kbdfront,i2c_piix4"/' /etc/default/grub
 echo 'GRUB_DISABLE_LINUX_UUID="true"' >> /etc/default/grub
 echo 'export LINUX_ROOT_DEVICE="LABEL=PRGMRDISK1"' >> /etc/default/grub
 sed -i 's/GRUB_TERMINAL_OUTPUT=.\+/GRUB_TERMINAL="serial console"/' /etc/default/grub
@@ -120,4 +120,6 @@ EOF
 chmod +x /etc/rc.d/firstboot
 echo 'STORAGE_DRIVER=overlay2' > /etc/sysconfig/docker-storage-setup
 rpm -qa | sort > /var/log/install-list
+[ -L /var/lib/dbus/machine-id ] || rm -f /var/lib/dbus/machine-id
+rm -f /etc/machine-id
 %end
