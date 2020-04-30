@@ -59,6 +59,7 @@ cp -p /*ks /mnt/sysimage/usr/local/sbin/
 echo localhost > /etc/hostname
 echo 'nameserver 71.19.155.120
 nameserver 71.19.145.215
+#nameserver 1.1.1.1
 #nameserver 8.8.8.8' > /etc/resolv.conf
 sed -i 's/HOSTNAME=.\+//' /etc/sysconfig/network
 echo 'DEVICE="eth0"

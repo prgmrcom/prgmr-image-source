@@ -75,9 +75,9 @@ chkconfig network on
 
 passwd -d root
 
-sed -i	-e 's/^PermitRootLogin yes/PermitRootLogin without-password/g' \
-        -e 's/#PermitRootLogin yes/PermitRootLogin without-password/g' \
-	  		-e 's/^PasswordAuthentication yes/PasswordAuthentication no/g' \
+sed -r -i	-e 's/^#?PermitRootLogin yes/PermitRootLogin without-password/g' \
+	  		-e 's/^#?PasswordAuthentication yes/PasswordAuthentication no/g' \
+	  		-e 's/^#?ChallengeResponseAuthentication yes/ChallengeResponseAuthentication no/g' \
 	 /etc/ssh/sshd_config
 
 echo '
@@ -105,6 +105,8 @@ echo 'GRUB_SERIAL_COMMAND="serial --unit=0 --speed=115200"' >> /etc/default/grub
 sed 's#LINUX_ROOT_DEVICE=${GRUB_DEVICE}#[ -z ${LINUX_ROOT_DEVICE} ] \&\& LINUX_ROOT_DEVICE=${GRUB_DEVICE}#' -i /etc/grub.d/10_linux
 sed 's/printf '\''%s\\n'\''/#printf '\''%s\\n'\''/g' -i /etc/grub.d/10_linux
 grub2-mkconfig -o /boot/grub2/grub.cfg
+grub2-editenv /boot/grub2/grubenv set boot=hd0,msdos1
+grub2-editenv /boot/grub2/grubenv set root=hd0,msdos1
 rpm -qa | sort > /var/log/install-list
 cp -a /etc/selinux/config /etc/selinux/config.orig
 sed 's/enforcing/permissive/g' -i /etc/selinux/config
